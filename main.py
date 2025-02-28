@@ -28,8 +28,7 @@ class BotHandler:
         self.prices = self.load_prices()
         self.initialize_folders()
         self.initialize_requests()
-
-        def load_country_codes(self):
+def load_country_codes(self):
     """Load country codes from JSON file."""
     if os.path.exists(self.country_codes_db):
         with open(self.country_codes_db, 'r', encoding='utf-8') as file:
