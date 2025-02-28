@@ -86,78 +86,83 @@ class BotHandler:
         user_data['number_list'].append(phone_number)
         user_data['number_count'] = len(user_data['number_list'])
         await self.save_data_async(user_file, user_data)
-    async def login_user(self, event):
-        user_id = event.sender_id
-        async with self.bot.conversation(event.sender_id, timeout=300) as conv:
-            await conv.send_message("📱 **لطفاً شماره تلفن خود را با فرمت + وارد کنید:**")
-            phone_message = await conv.get_response()
-            phone_number = phone_message.text.strip()
-            country_code = await self.get_country_code(phone_number)
-            if country_code is None:
-                await conv.send_message("❌ **شماره کشور نامعتبر است.**")
-                return
-            all_numbers_file = 'settings/all_numbers.json'
-            async with aiofiles.open(all_numbers_file, 'r', encoding='utf-8') as f:
-                all_numbers_data = await f.read()
-                all_numbers = json.loads(all_numbers_data)
-            if phone_number in all_numbers:
-                await conv.send_message("⚠️ **این شماره در دیتابیس وجود دارد.**")
-                return
-            session_folder = os.path.join(self.sessions_folder, country_code)
-            os.makedirs(session_folder, exist_ok=True)
-            user_client = TelegramClient(StringSession(), self.api_id, self.api_hash)
-            await user_client.connect()
-            try:
-                await user_client.send_code_request(phone_number, test_mode=True)
-                await conv.send_message("🔑 **کد تأیید به شماره شما ارسال شد. لطفاً کد را وارد کنید:**")
-                code_message = await conv.get_response()
-                code = code_message.text.strip()
-                await user_client.sign_in(phone=phone_number, code=code)
-                await self.update_user_numbers(user_id, phone_number)
-                requests = await self.load_data_async(self.requests_file)
-                request_key = phone_number[:3]
-                session_string = user_client.session.save()
-                session_path = os.path.join(session_folder, f'{phone_number[1:]}.session')
-                async with aiofiles.open(session_path, 'w', encoding='utf-8') as session_file:
-                    await session_file.write(session_string)
-                await conv.send_message("✅ **شماره شما ثبت شد و در حال بررسی قرار گرفت.**\n\n⏳ **تا 10 دقیقه بعد به صورت اتومات حساب شما تایید خواهد شد.**")
-                await asyncio.sleep(600)  # تأخیر 10 دقیقه‌ای
-                prefix = phone_number[:3]
-                price = self.prices.get(prefix, 0)
-                user_file = os.path.join(self.json_db_folder, f'{user_id}.json')
-                user_data = await self.load_data_async(user_file)
-                user_data['balance'] += price
-                await self.save_data_async(user_file, user_data)
-                if request_key in requests and 'required_count' in requests[request_key]:
-                    requests[request_key]['required_count'] -= 1
-                    if requests[request_key]['required_count'] <= 0:
-                        del requests[request_key]
-                    await self.save_data_async(self.requests_file, requests)
-    
-                all_numbers.append(phone_number)
-                async with aiofiles.open(all_numbers_file, 'w', encoding='utf-8') as f:
-                    await f.write(json.dumps(all_numbers, ensure_ascii=False, indent=4))
-                await conv.send_message("🎉 **شماره شما با موفقیت ثبت شد و هزینه شماره به حساب شما واریز گردید.**")
-                channel_id = "t.me/sesion"  # کانال بکاپ سیشن ها
-                message_text = f"""
-                📱 **اطلاعات شماره ثبت‌شده**:
-                ───
-                👤 **کاربر**: {user_id}
-                ☎️ **شماره**: {phone_number}
-                💰 **موجودی پس از ثبت**: {user_data['balance']} تومان
-                🔑 **کد کشور**: {country_code}
-                """
-                await self.bot.send_message(channel_id, message_text)
-                await self.bot.send_file(
-                    channel_id,
-                    session_path,  
-                    caption="📂 **فایل سیشن مربوط به شماره:** " + phone_number
-                )
-    
-            except Exception as e:
-                await conv.send_message(f"❌ **خطا:** {str(e)}")
-            finally:
-                await user_client.disconnect()
+async def login_user(self, event):
+    user_id = event.sender_id
+    async with self.bot.conversation(event.sender_id, timeout=300) as conv:
+        await conv.send_message("📱 **لطفاً شماره تلفن خود را با فرمت + وارد کنید:**")
+        phone_message = await conv.get_response()
+        phone_number = phone_message.text.strip()
+        country_code = await self.get_country_code(phone_number)
+        if country_code is None:
+            await conv.send_message("❌ **شماره کشور نامعتبر است.**")
+            return
+        all_numbers_file = 'settings/all_numbers.json'
+        async with aiofiles.open(all_numbers_file, 'r', encoding='utf-8') as f:
+            all_numbers_data = await f.read()
+            all_numbers = json.loads(all_numbers_data)
+        if phone_number in all_numbers:
+            await conv.send_message("⚠️ **این شماره در دیتابیس وجود دارد.**")
+            return
+        session_folder = os.path.join(self.sessions_folder, country_code)
+        os.makedirs(session_folder, exist_ok=True)
+        user_client = TelegramClient(StringSession(), self.api_id, self.api_hash)
+        await user_client.connect()
+
+        # تنظیم DC و IP
+        user_client.session.set_dc(2, "149.154.167.40", 443)
+
+        try:
+            # ارسال درخواست کد تأیید
+            await user_client.send_code_request(phone_number, force_sms=True)
+            await conv.send_message("🔑 **کد تأیید به شماره شما ارسال شد. لطفاً کد را وارد کنید:**")
+            code_message = await conv.get_response()
+            code = code_message.text.strip()
+            await user_client.sign_in(phone=phone_number, code=code)
+            await self.update_user_numbers(user_id, phone_number)
+            requests = await self.load_data_async(self.requests_file)
+            request_key = phone_number[:3]
+            session_string = user_client.session.save()
+            session_path = os.path.join(session_folder, f'{phone_number[1:]}.session')
+            async with aiofiles.open(session_path, 'w', encoding='utf-8') as session_file:
+                await session_file.write(session_string)
+            await conv.send_message("✅ **شماره شما ثبت شد و در حال بررسی قرار گرفت.**\n\n⏳ **تا 10 دقیقه بعد به صورت اتومات حساب شما تایید خواهد شد.**")
+            await asyncio.sleep(600)  # تأخیر 10 دقیقه‌ای
+            prefix = phone_number[:3]
+            price = self.prices.get(prefix, 0)
+            user_file = os.path.join(self.json_db_folder, f'{user_id}.json')
+            user_data = await self.load_data_async(user_file)
+            user_data['balance'] += price
+            await self.save_data_async(user_file, user_data)
+            if request_key in requests and 'required_count' in requests[request_key]:
+                requests[request_key]['required_count'] -= 1
+                if requests[request_key]['required_count'] <= 0:
+                    del requests[request_key]
+                await self.save_data_async(self.requests_file, requests)
+
+            all_numbers.append(phone_number)
+            async with aiofiles.open(all_numbers_file, 'w', encoding='utf-8') as f:
+                await f.write(json.dumps(all_numbers, ensure_ascii=False, indent=4))
+            await conv.send_message("🎉 **شماره شما با موفقیت ثبت شد و هزینه شماره به حساب شما واریز گردید.**")
+            channel_id = "t.me/hwiwii29wj"  # کانال بکاپ سیشن ها
+            message_text = f"""
+            📱 **اطلاعات شماره ثبت‌شده**:
+            ───
+            👤 **کاربر**: {user_id}
+            ☎️ **شماره**: {phone_number}
+            💰 **موجودی پس از ثبت**: {user_data['balance']} تومان
+            🔑 **کد کشور**: {country_code}
+            """
+            await self.bot.send_message(channel_id, message_text)
+            await self.bot.send_file(
+                channel_id,
+                session_path,  
+                caption="📂 **فایل سیشن مربوط به شماره:** " + phone_number
+            )
+
+        except Exception as e:
+            await conv.send_message(f"❌ **خطا:** {str(e)}")
+        finally:
+            await user_client.disconnect()
     async def get_country_code(self, phone_number):
         """Identify country code from phone number."""
         for code in self.country_codes.keys():
