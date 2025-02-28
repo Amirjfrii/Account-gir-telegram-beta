@@ -24,16 +24,19 @@ class BotHandler:
         self.country_codes_db = 'settings/country_codes.json'
         self.prices_db = 'settings/prices.json'
         self.requests_file = 'settings/requests.json'
-        self.country_codes = self.load_country_codes()
+        self.country_codes = self.load_country_codes()  # فراخوانی متد
         self.prices = self.load_prices()
         self.initialize_folders()
         self.initialize_requests()
-def load_country_codes(self):
-    """Load country codes from JSON file."""
-    if os.path.exists(self.country_codes_db):
-        with open(self.country_codes_db, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    return {}
+
+    def load_country_codes(self):
+        """Load country codes from JSON file."""
+        if os.path.exists(self.country_codes_db):
+            with open(self.country_codes_db, 'r', encoding='utf-8') as file:
+                return json.load(file)
+        return {}
+
+    # بقیه متدها...
     def load_prices(self):
         """Load prices from JSON file."""
         if os.path.exists(self.prices_db):
