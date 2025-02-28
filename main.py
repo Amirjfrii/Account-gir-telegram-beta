@@ -473,7 +473,7 @@ async def login_user(self, event):
 if __name__ == "__main__":
     API_ID = '29493929' #ApiID
     API_HASH = '8c7b2d8c9fae7d4e4ae7e75cddc838e7' #ApiHach
-    BOT_TOKEN = '2200260147:AAGlAMaXEdXQbSyXNwIx8PIfMe0kD6mFEYg/test' #Token bot
+    BOT_TOKEN = '2200260147:AAGlAMaXEdXQbSyXNwIx8PIfMe0kD6mFEYg' #Token bot
     bot_handler = BotHandler(API_ID, API_HASH, BOT_TOKEN)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(bot_handler.run())
