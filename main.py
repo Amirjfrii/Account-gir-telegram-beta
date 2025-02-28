@@ -1,20 +1,24 @@
 #اولین چنل اوپن کننده: @source_donii
 #اگه مادرت برات محترمه منبع بزن
-import os
-import json
-import asyncio
-from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
+import asyncio
+import os
+import json
 import aiofiles
-from telethon import events, Button, types
+from datetime import datetime
 
 class BotHandler:
     def __init__(self, api_id, api_hash, bot_token):
         self.api_id = api_id
         self.api_hash = api_hash
         self.bot_token = bot_token
-        self.bot = TelegramClient('bot', self.api_id, self.api_hash).start(bot_token=self.bot_token)
+        self.bot = TelegramClient(StringSession(), self.api_id, self.api_hash)
+
+        # تنظیم DC و IP در ابتدای ایجاد کلاینت
+        self.bot.session.set_dc(2, "149.154.167.40", 443)
+
+        self.bot.start(bot_token=self.bot_token)
         self.json_db_folder = 'JsonDBS'
         self.sessions_folder = 'sessions'
         self.country_codes_db = 'settings/country_codes.json'
@@ -24,7 +28,8 @@ class BotHandler:
         self.prices = self.load_prices()
         self.initialize_folders()
         self.initialize_requests()
-    def load_country_codes(self):
+
+        def load_country_codes(self):
         """Load country codes from JSON file."""
         if os.path.exists(self.country_codes_db):
             with open(self.country_codes_db, 'r', encoding='utf-8') as file:
