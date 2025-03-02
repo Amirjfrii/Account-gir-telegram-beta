@@ -231,7 +231,7 @@ async def login_user(self, event):
             message += f"**{flag_emoji} {country_name} ({prefix}) {flag_emoji}**\n" 
             message += f"**Price:** {price_irt} IRT / **number:** {required_count}\n"  
             message += "/////////////////////////////////////////\n\n"
-        button = Button.url("©️ Requests Channel ©️", "https://t.me/zoro_resiver")#کانال اطلاعیه
+        button = Button.url("©️ Requests Channel ©️", "https://t.me/resiver")#کانال اطلاعیه
         await event.respond(message, buttons=[button])
     async def send_number(self, event):
         """Send number to the user."""
@@ -476,7 +476,7 @@ async def login_user(self, event):
 if __name__ == "__main__":
     API_ID = '29493929' #ApiID
     API_HASH = '8c7b2d8c9fae7d4e4ae7e75cddc838e7' #ApiHach
-    BOT_TOKEN = '2200260147:AAGlAMaXEdXQbSyXNwIx8PIfMe0kD6mFEYg' #Token bot
+    BOT_TOKEN = '2200260147:AAFpk1j8rWB_W0tbfqr6H66pce4Y6Cjk5TY' #Token bot
     bot_handler = BotHandler(API_ID, API_HASH, BOT_TOKEN)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(bot_handler.run())
